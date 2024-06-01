@@ -76,7 +76,9 @@ module.exports = {
         "plugin:import/typescript",
         "prettier",
       ],
-      rules: {},
+      rules: {
+        "@typescript-eslint/consistent-type-definitions": ["error", "type"],
+      },
     },
 
     // Markdown
