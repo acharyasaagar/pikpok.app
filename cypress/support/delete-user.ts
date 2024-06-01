@@ -3,10 +3,10 @@
 // yarn ts-node -r tsconfig-paths/register ./cypress/support/delete-user.ts username@example.com,
 // and that user will get deleted
 
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime";
 import { installGlobals } from "@remix-run/node";
+import { mongodb } from "~/utils/db.server";
 
-import { prisma } from "~/db.server";
+const userCollection = mongodb.db().collection("users");
 
 installGlobals();
 
@@ -19,18 +19,12 @@ async function deleteUser(email: string) {
   }
 
   try {
-    await prisma.user.delete({ where: { email } });
-  } catch (error) {
-    if (
-      error instanceof PrismaClientKnownRequestError &&
-      error.code === "P2025"
-    ) {
+    const deleteResult = await userCollection.deleteOne({ email });
+    if (deleteResult.deletedCount === 0) {
       console.log("User not found, so no need to delete");
-    } else {
-      throw error;
     }
   } finally {
-    await prisma.$disconnect();
+    await mongodb.close();
   }
 }
 
