@@ -5,15 +5,20 @@ import { z } from "zod";
 import { mongodb } from "~/utils/db.server";
 
 const UserSchema = z.object({
-  _id: z.instanceof(BSON.ObjectId).transform((value) => value.toHexString()),
+  _id: z
+    .instanceof(BSON.ObjectId)
+    .transform((value) => value.toHexString())
+    .or(z.string())
+    .default(() => new BSON.ObjectId().toHexString()),
   createdAt: z.date().default(() => new Date()),
   email: z.string(),
   password: z.string(),
 });
 
-const UserViewSchema = UserSchema.omit({ password: true }).transform(
-  (user) => ({ ...user, id: user._id }),
-);
+const UserViewSchema = UserSchema.omit({ password: true }).transform((user) => {
+  const { _id: id, ...rest } = user;
+  return { ...rest, id };
+});
 
 export type User = z.infer<typeof UserSchema>;
 export type UserView = z.infer<typeof UserViewSchema>;
