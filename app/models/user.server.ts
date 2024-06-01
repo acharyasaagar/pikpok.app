@@ -11,7 +11,9 @@ const UserSchema = z.object({
   password: z.string(),
 });
 
-const UserViewSchema = UserSchema.omit({ password: true });
+const UserViewSchema = UserSchema.omit({ password: true }).transform(
+  (user) => ({ ...user, id: user._id }),
+);
 
 export type User = z.infer<typeof UserSchema>;
 export type UserView = z.infer<typeof UserViewSchema>;
