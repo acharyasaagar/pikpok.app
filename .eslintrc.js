@@ -76,16 +76,7 @@ module.exports = {
         "plugin:import/typescript",
         "prettier",
       ],
-      rules: {
-        "import/order": [
-          "error",
-          {
-            alphabetize: { caseInsensitive: true, order: "asc" },
-            groups: ["builtin", "external", "internal", "parent", "sibling"],
-            "newlines-between": "always",
-          },
-        ],
-      },
+      rules: {},
     },
 
     // Markdown
