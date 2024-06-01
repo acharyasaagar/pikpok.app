@@ -6,6 +6,7 @@ export const validateFormData = async <T extends z.ZodRawShape>(
   schema: z.ZodObject<T>,
   formData: FormData,
 ): Promise<z.infer<typeof schema> | { errors: z.infer<typeof schema> }> => {
+  console.log("formData", Object.fromEntries(formData));
   try {
     const data = schema.parse(Object.fromEntries(formData));
     return data;
