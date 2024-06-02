@@ -38,21 +38,47 @@ export default function Expenses() {
           <h1 className="text-2xl font-semibold">Expenses</h1>
           <div className="ml-auto mt-1">
             <Link
-              to="/expenses/new"
+              to="/new-expense"
               className="bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded"
             >
               New Expense
             </Link>
           </div>
         </div>
-        <div className="mt-4">
-          Total Expense for {month} {year}: {totalExpenseAmount}
+
+        <div className="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500">
+          <p className="text-blue-700">
+            Total Expense for {month} {year}: <b>{totalExpenseAmount} EUR</b>
+          </p>
         </div>
-        <ul className="mt-8">
+
+        <ul className="mt-6">
           {expenses.map((expense) => (
-            <li key={expense.id} className="border-b border-gray-200 py-2">
-              {expense.amount} - {expense.category} -{" "}
-              {new Date(expense.date).toDateString()}
+            <li key={expense.id} className=" border-gray-200 border-b  py-4">
+              <div className="flex justify-between items-start  border-gray-200">
+                <div className="flex flex-col">
+                  <span className="text-lg font-semibold text-gray-800">
+                    ${expense.amount.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(expense.date).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <div className="text-sm text-gray-600 capitalize mb-1">
+                    {expense.category}
+                  </div>
+                </div>
+              </div>
+              {expense.comment ? (
+                <div className="text-sm text-gray-600 mt-4">
+                  {expense.comment}
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>

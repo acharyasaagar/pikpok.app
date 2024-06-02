@@ -48,7 +48,6 @@ export default function NewExpensePage() {
   const dateRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
   const commentRef = useRef<HTMLTextAreaElement>(null);
-  console.log(loaderData);
 
   useEffect(() => {
     if (actionData?.errors?.amount) {
@@ -151,6 +150,9 @@ export default function NewExpensePage() {
           >
             Add expense
           </button>
+          <a href="/expenses" className="block text-center text-blue-500">
+            Go to expenses
+          </a>
         </Form>
       </div>
     </div>
