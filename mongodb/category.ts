@@ -4,6 +4,9 @@ import { MongoClient } from "mongodb";
 // Load environment variables from .env file
 dotenvConfig();
 
+const databaseName = "production";
+const categoriesCollectionName = "categories";
+
 const predefinedCategories = [
   {
     name: "Housing",
@@ -48,8 +51,8 @@ export async function initializePredefinedCategories() {
 
   try {
     await client.connect();
-    const database = client.db("expense-tracker"); // Replace "your_database_name" with your actual database name
-    const categoryCollection = database.collection("categories");
+    const database = client.db(databaseName);
+    const categoryCollection = database.collection(categoriesCollectionName);
 
     const existingCategories = await categoryCollection
       .find({ createdByUserId: { $exists: false } })
