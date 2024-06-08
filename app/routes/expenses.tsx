@@ -89,5 +89,7 @@ export default function Expenses() {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function reduceTotal(total: number, expense: any) {
-  return total + expense.amount;
+  const result = total + expense.amount;
+  // round up the result to 2 decimal places
+  return Math.ceil(result * 100) / 100;
 }
