@@ -99,6 +99,7 @@ export default function NewExpensePage() {
               className={`w-full rounded border border-gray-500 px-2 py-1 text-lg focus:border-blue-500`}
               aria-invalid={actionData?.errors?.date ? true : undefined}
               aria-describedby="date-error"
+              max={new Date().toISOString().split("T")[0]}
             />
           </div>
 
