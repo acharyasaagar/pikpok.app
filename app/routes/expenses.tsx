@@ -23,7 +23,7 @@ const ReqQuerySchema = z.object({
   year: z
     .string()
     .transform((y) => parseInt(y))
-    .refine((y) => y > 2020 && y < 2050)
+    .refine((y) => y >= 2024 && y < 2050)
     .optional(),
 });
 
@@ -59,33 +59,41 @@ export default function Expenses() {
     loaderData;
 
   const handlePrevious = () => {
-    setSearchParams(new URLSearchParams(previous));
+    previous && setSearchParams(new URLSearchParams(previous));
   };
 
   const handleNext = () => {
-    setSearchParams(new URLSearchParams(next));
+    next && setSearchParams(new URLSearchParams(next));
   };
+
+  const prevButtonJsx = previous ? (
+    <button
+      onClick={handlePrevious}
+      className=" hover:bg-blue-50 py-1 px-2 rounded"
+    >
+      Previous
+    </button>
+  ) : null;
+
+  const nextButtonJsx = next ? (
+    <button
+      onClick={handleNext}
+      className={`hover:bg-blue-50 py-1 px-2 rounded ${prevButtonJsx ? "ml-4" : ""} inline-block`}
+    >
+      Next
+    </button>
+  ) : null;
 
   return (
     <div className="flex min-h-full flex-col justify-start">
       <div className="mx-auto w-full max-w-md px-8 py-8">
-        <div className="flex justify-between items-center">
-          <button
-            onClick={handlePrevious}
-            className=" hover:bg-blue-50 py-1 px-2 rounded"
-          >
-            Previous
-          </button>
-          <h1 className="text-2xl font-semibold">
-            {month} {year}
-          </h1>
-          <button
-            onClick={handleNext}
-            className=" hover:bg-blue-50 py-1 px-2 rounded"
-          >
-            Next
-          </button>
+        <div className="flex items-center mb-2 -ml-2">
+          {prevButtonJsx}
+          {nextButtonJsx}
         </div>
+        <h1 className="text-2xl font-semibold">
+          {month} {year}
+        </h1>
 
         <div className="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500">
           <p className="text-blue-700">
@@ -167,15 +175,21 @@ function reduceTotal(total: number, expense: any) {
 
 const getPagination = (month: MonthName, year: number): Pagination => {
   const monthIndex = getMonthIndexFromName(month);
-  const isLastMonth = monthIndex === 11;
-  const nextMonthIndex = isLastMonth ? 0 : monthIndex + 1;
-  const nextMonth = getMonthNameFromIndex(nextMonthIndex);
-  const next = `?month=${nextMonth}&year=${isLastMonth ? year + 1 : year}`;
+  const date = new Date(year, monthIndex);
+  const now = new Date();
+  const nextDate = new Date(date.getFullYear(), date.getMonth() + 1);
+  const previousDate = new Date(date.getFullYear(), date.getMonth() - 1);
+  const earliestValidDate = new Date(2024, 0);
 
-  const isFirstMonth = monthIndex === 0;
-  const previousMonthIndex = isFirstMonth ? 11 : monthIndex - 1;
-  const previousMonth = getMonthNameFromIndex(previousMonthIndex);
-  const previous = `?month=${previousMonth}&year=${isFirstMonth ? year - 1 : year}`;
+  const next =
+    nextDate <= now
+      ? `?month=${getMonthNameFromIndex(nextDate.getMonth())}&year=${nextDate.getFullYear()}`
+      : null;
+
+  const previous =
+    previousDate >= earliestValidDate
+      ? `?month=${getMonthNameFromIndex(previousDate.getMonth())}&year=${previousDate.getFullYear()}`
+      : null;
 
   return {
     previous,
@@ -184,6 +198,6 @@ const getPagination = (month: MonthName, year: number): Pagination => {
 };
 
 export type Pagination = {
-  previous: string;
-  next: string;
+  previous: string | null;
+  next: string | null;
 };
