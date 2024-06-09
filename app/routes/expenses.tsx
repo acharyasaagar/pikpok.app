@@ -1,42 +1,101 @@
-import { Link, useLoaderData } from "@remix-run/react";
+import {
+  Link,
+  isRouteErrorResponse,
+  useLoaderData,
+  useRouteError,
+  useSearchParams,
+} from "@remix-run/react";
 import { LoaderFunctionArgs } from "@remix-run/node";
 import { getUserExpensesForMonth } from "~/models/expense.server";
 import { requireUserId } from "~/utils/session.server";
-import { ZodMonthShort, getMonthNameFromIndex } from "~/utils/date.server";
+import {
+  MonthName,
+  ZodMonthShort,
+  getMonthIndexFromName,
+  getMonthNameFromIndex,
+} from "~/utils/date.server";
 import { z } from "zod";
+import { getErrorMessagesFromZodError, isZodError } from "~/utils/zod";
+import { badRequest } from "~/utils/response.server";
 
 const ReqQuerySchema = z.object({
   month: ZodMonthShort.optional(),
-  year: z.number().min(2020).max(2050).optional(),
+  year: z
+    .string()
+    .transform((y) => parseInt(y))
+    .refine((y) => y > 2020 && y < 2050)
+    .optional(),
 });
 
-export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+export const loader = async ({ request }: LoaderFunctionArgs) => {
   const userId = await requireUserId(request);
-  const searchParams = ReqQuerySchema.parse(params);
+  const rawSearchParams = Object.fromEntries(new URL(request.url).searchParams);
+  const queryParseResult = ReqQuerySchema.safeParse(rawSearchParams);
+  if (!queryParseResult.success) {
+    throw badRequest(getErrorMessagesFromZodError(queryParseResult.error));
+  }
+  const searchParams = queryParseResult.data;
   const now = new Date();
   const month = searchParams.month || getMonthNameFromIndex(now.getMonth());
   const year = searchParams.year || now.getFullYear();
   const expenses = await getUserExpensesForMonth(userId, month, year);
+  const { previous, next } = getPagination(month, year);
 
   return {
     expenses,
     totalExpenseAmount: expenses.reduce(reduceTotal, 0),
     month,
     year,
+    previous,
+    next,
   };
 };
 
 export default function Expenses() {
+  const [, setSearchParams] = useSearchParams();
   const loaderData = useLoaderData<typeof loader>();
+  console.log(loaderData);
+  const { expenses, totalExpenseAmount, month, year, previous, next } =
+    loaderData;
 
-  const { expenses, totalExpenseAmount, month, year } = loaderData;
+  const handlePrevious = () => {
+    setSearchParams(new URLSearchParams(previous));
+  };
+
+  const handleNext = () => {
+    setSearchParams(new URLSearchParams(next));
+  };
 
   return (
     <div className="flex min-h-full flex-col justify-start">
       <div className="mx-auto w-full max-w-md px-8 py-8">
-        <div className="flex justify-center">
-          <h1 className="text-2xl font-semibold">Expenses</h1>
-          <div className="ml-auto mt-1">
+        <div className="flex justify-between items-center">
+          <button
+            onClick={handlePrevious}
+            className=" hover:bg-blue-50 py-1 px-2 rounded"
+          >
+            Previous
+          </button>
+          <h1 className="text-2xl font-semibold">
+            {month} {year}
+          </h1>
+          <button
+            onClick={handleNext}
+            className=" hover:bg-blue-50 py-1 px-2 rounded"
+          >
+            Next
+          </button>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500">
+          <p className="text-blue-700">
+            Total Expense for {month} {year}: <b>{totalExpenseAmount} EUR</b>
+          </p>
+        </div>
+
+        <div className=" flex justify-between items-center border-b border-gray-200 py-8 ">
+          <h2 className="text-lg font-semibold ">Expenses</h2>
+          <div className="ml-auto ">
             <Link
               to="/new-expense"
               className="bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded"
@@ -44,12 +103,6 @@ export default function Expenses() {
               New Expense
             </Link>
           </div>
-        </div>
-
-        <div className="mt-6 p-4 bg-blue-100 border-l-4 border-blue-500">
-          <p className="text-blue-700">
-            Total Expense for {month} {year}: <b>{totalExpenseAmount} EUR</b>
-          </p>
         </div>
 
         <ul className="mt-6">
@@ -87,9 +140,50 @@ export default function Expenses() {
   );
 }
 
+export const ErrorBoundary = () => {
+  const error = useRouteError();
+
+  const errorMessage = isRouteErrorResponse(error)
+    ? error.data
+    : isZodError(error)
+      ? getErrorMessagesFromZodError(error)
+      : "Something went wrong.";
+
+  console.log(errorMessage);
+  return (
+    <div className="text-center mt-8 text-red-500">
+      <h1>Error</h1>
+      <p>{errorMessage}</p>
+    </div>
+  );
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function reduceTotal(total: number, expense: any) {
   const result = total + expense.amount;
   // round up the result to 2 decimal places
   return Math.ceil(result * 100) / 100;
 }
+
+const getPagination = (month: MonthName, year: number): Pagination => {
+  const monthIndex = getMonthIndexFromName(month);
+  const isLastMonth = monthIndex === 11;
+  const nextMonthIndex = isLastMonth ? 0 : monthIndex + 1;
+  const nextMonth = getMonthNameFromIndex(nextMonthIndex);
+  const next = `?month=${nextMonth}&year=${isLastMonth ? year + 1 : year}`;
+
+  const isFirstMonth = monthIndex === 0;
+  const previousMonthIndex = isFirstMonth ? 11 : monthIndex - 1;
+  const previousMonth = getMonthNameFromIndex(previousMonthIndex);
+  const previous = `?month=${previousMonth}&year=${isFirstMonth ? year - 1 : year}`;
+
+  return {
+    previous,
+    next,
+  };
+};
+
+export type Pagination = {
+  previous: string;
+  next: string;
+};

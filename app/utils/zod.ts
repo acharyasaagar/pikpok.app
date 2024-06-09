@@ -26,3 +26,16 @@ export const validateFormData = async <T extends z.ZodRawShape>(
     throw error;
   }
 };
+
+export const getErrorMessagesFromZodError = (errors: z.ZodError): string => {
+  return errors.errors
+    .map(
+      ({ message, path }) =>
+        `${message} ${path.length ? "in '" + path.join(", ") + "'" : ""}`,
+    )
+    .join(", ");
+};
+
+export const isZodError = (error: unknown): error is z.ZodError => {
+  return error instanceof z.ZodError;
+};
