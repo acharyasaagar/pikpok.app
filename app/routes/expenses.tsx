@@ -54,7 +54,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export default function Expenses() {
   const [, setSearchParams] = useSearchParams();
   const loaderData = useLoaderData<typeof loader>();
-  console.log(loaderData);
   const { expenses, totalExpenseAmount, month, year, previous, next } =
     loaderData;
 
@@ -157,7 +156,6 @@ export const ErrorBoundary = () => {
       ? getErrorMessagesFromZodError(error)
       : "Something went wrong.";
 
-  console.log(errorMessage);
   return (
     <div className="text-center mt-8 text-red-500">
       <h1>Error</h1>

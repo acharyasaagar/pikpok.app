@@ -43,11 +43,6 @@ export async function createExpense(params: {
 }) {
   const { amount, date = new Date(), category, comment, userId } = params;
 
-  console.log("amount", amount);
-  console.log("date", date);
-  console.log("category", category);
-  console.log("comment", comment);
-
   const expenseDocument = ExpenseSchema.parse({
     amount,
     date,
