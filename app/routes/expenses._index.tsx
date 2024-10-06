@@ -1,4 +1,5 @@
 import {
+  Form,
   Link,
   isRouteErrorResponse,
   useLoaderData,
@@ -139,6 +140,16 @@ export default function Expenses() {
                   {expense.comment}
                 </div>
               ) : null}
+              <div className="mt-4">
+                <Form action={`/expenses/${expense.id}`} method="delete">
+                  <button
+                    type="submit"
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </Form>
+              </div>
             </li>
           ))}
         </ul>
