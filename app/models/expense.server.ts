@@ -1,6 +1,6 @@
 import { BSON } from "mongodb";
 import { z } from "zod";
-import { MonthName, getMonthIndexFromName } from "~/utils/date.server";
+import { MonthName, getMonthIndexFromName } from "~/utils/date";
 import { mongodb } from "~/utils/db.server";
 
 export const ExpenseSchema = z.object({
