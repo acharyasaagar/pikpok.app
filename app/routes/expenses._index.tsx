@@ -14,7 +14,7 @@ import {
   ZodMonthShort,
   getMonthIndexFromName,
   getMonthNameFromIndex,
-} from "~/utils/date.server";
+} from "~/utils/date";
 import { z } from "zod";
 import { getErrorMessagesFromZodError, isZodError } from "~/utils/zod";
 import { badRequest } from "~/utils/response.server";
@@ -53,7 +53,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Expenses() {
-  const [, setSearchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const loaderData = useLoaderData<typeof loader>();
   const { expenses, totalExpenseAmount, month, year, previous, next } =
     loaderData;
@@ -105,7 +105,7 @@ export default function Expenses() {
           <h2 className="text-lg font-semibold ">Expenses</h2>
           <div className="ml-auto ">
             <Link
-              to="/new-expense"
+              to={`/expenses/new?redirectTo=${`/expenses?${encodeURIComponent(searchParams.toString())}`}`}
               className="bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded"
             >
               New Expense

@@ -4,13 +4,19 @@ import {
   LoaderFunctionArgs,
   redirect,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect, useRef } from "react";
 import { createExpense } from "~/models/expense.server";
 import { requireUserId } from "~/utils/session.server";
 import { validateFormData } from "~/utils/zod";
 import { badRequest } from "~/utils/response.server";
 import { getAllCategories } from "~/models/category.server";
+import { getMonthIndexFromName, ZodMonthShort } from "~/utils/date";
 
 export const ExpenseFormSchema = z.object({
   amount: z.string().transform(parseFloat),
@@ -20,6 +26,7 @@ export const ExpenseFormSchema = z.object({
     .refine((d) => z.date().safeParse(d).success),
   category: z.string(),
   comment: z.string().optional(),
+  redirectTo: z.string().optional(),
 });
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -33,21 +40,25 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const userId = await requireUserId(request);
 
   const formData = await request.formData();
-  const expenseData = await validateFormData(ExpenseFormSchema, formData);
+  const parsedFormData = await validateFormData(ExpenseFormSchema, formData);
 
-  if ("errors" in expenseData) return badRequest(expenseData);
+  if ("errors" in parsedFormData) return badRequest(parsedFormData);
+  const { redirectTo = "/expenses", ...expenseData } = parsedFormData;
 
   await createExpense({ ...expenseData, userId });
-  return redirect(`/expenses`);
+  return redirect(redirectTo);
 };
 
 export default function NewExpensePage() {
+  const [searchParams] = useSearchParams();
   const actionData = useActionData<typeof action>();
   const loaderData = useLoaderData<typeof loader>();
   const amountRef = useRef<HTMLInputElement>(null);
   const dateRef = useRef<HTMLInputElement>(null);
   const categoryRef = useRef<HTMLSelectElement>(null);
   const commentRef = useRef<HTMLTextAreaElement>(null);
+  const redirectTo = searchParams.get("redirectTo") || "";
+  const defaultDate = getDefaultDate(redirectTo.split("?")[1]);
 
   useEffect(() => {
     if (actionData?.errors?.amount) {
@@ -64,6 +75,7 @@ export default function NewExpensePage() {
       <div className="mx-auto w-full max-w-md px-8">
         <h1 className="text-2xl font-bold mb-4">Add New Expense</h1>
         <Form method="post" className="space-y-4">
+          <input type="hidden" name="redirectTo" value={redirectTo} />
           <div>
             <label
               htmlFor="amount"
@@ -100,6 +112,7 @@ export default function NewExpensePage() {
               aria-invalid={actionData?.errors?.date ? true : undefined}
               aria-describedby="date-error"
               max={new Date().toISOString().split("T")[0]}
+              defaultValue={defaultDate}
             />
           </div>
 
@@ -158,4 +171,19 @@ export default function NewExpensePage() {
       </div>
     </div>
   );
+}
+
+function getDefaultDate(query: string): string {
+  const urlSearchParams = new URLSearchParams(query);
+  const month = ZodMonthShort.safeParse(urlSearchParams.get("month"));
+  const year = z.coerce.number().safeParse(urlSearchParams.get("year"));
+
+  if (month.success && year.success) {
+    const date = new Date();
+    date.setUTCFullYear(year.data);
+    date.setUTCMonth(getMonthIndexFromName(month.data));
+    return date.toISOString().split("T")[0];
+  }
+
+  return new Date().toISOString().split("T")[0];
 }
