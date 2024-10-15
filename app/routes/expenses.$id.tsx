@@ -7,7 +7,8 @@ export const action: ActionFunction = async ({ params, request }) => {
   await requireUserId(request);
   const expenseId = z.string().parse(params.id);
   await deleteExpenseById(expenseId);
-  return redirect("/expenses");
+  const referer = request.headers.get("referer");
+  return redirect(referer ?? "/expenses");
 };
 
 const Expense = () => {
